@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ek Aasman</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#060606; --surface:#101010; --surface-2:#161616; --line:#2a2a2a;
+    --ink:#f4f1e9; --ink-dim:#87857e; --accent:#c81e3a; --accent-dim:#5c1420; --accent-glow:rgba(200,30,58,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -8%, #1a1010 0%, var(--bg) 60%),
+      var(--bg);
+    color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; position:relative;
+  }
+  body::after{
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:999;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.55) 100%);
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:44px 22px 100px; position:relative; z-index:1;}
+  h1,h2{font-family:'Fraunces',serif; margin:0;}
+
+  .banner{background:rgba(200,30,58,.12); border:1px solid var(--accent); color:#f2b8c2; font-size:.8rem; padding:11px 15px; border-radius:4px; margin-bottom:20px; line-height:1.4;}
+
+  header{text-align:center; margin-bottom:6px;}
+  header .eyebrow{font-size:.68rem; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); margin-bottom:8px;}
+  header h1{font-size:2.6rem; font-weight:300; letter-spacing:-.01em; line-height:1;}
+  .divider{height:1px; background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent); margin:22px 0;}
+
+  .whoami{text-align:center; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:24px;}
+  .whoami button{background:none; border:none; color:var(--accent); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; text-decoration:none; padding:0; margin-left:8px; border-bottom:1px solid var(--accent);}
+
+  .stats{display:flex; justify-content:center; gap:0; margin-bottom:30px;}
+  .stat{text-align:center; flex:1; border-right:1px solid var(--line); padding:0 6px;}
+  .stat:last-child{border-right:none;}
+  .stat b{display:block; font-family:'Fraunces',serif; font-size:2rem; font-weight:600; color:var(--ink); line-height:1;}
+  .stat span{font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); display:block; margin-top:6px;}
+
+  .tabs{display:flex; gap:26px; justify-content:center; margin-bottom:30px; border-bottom:1px solid var(--line);}
+  .tab{padding:0 0 12px; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; color:var(--ink-dim); border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .tab.active{color:var(--ink); border-bottom-color:var(--accent);}
+
+  .view{display:none;} .view.active{display:block;}
+
+  .section-label{font-size:.68rem; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:24px; margin-bottom:20px;}
+  .card .desc{color:var(--ink-dim); font-size:.85rem; margin-bottom:16px; line-height:1.5;}
+
+  .moods{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;}
+  .mood-btn{background:transparent; border:1px solid var(--line); border-radius:4px; font-size:1.15rem; padding:6px 10px; cursor:pointer;}
+  .mood-btn.active{border-color:var(--accent); background:var(--accent-glow);}
+  textarea{width:100%; background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--ink); font-family:inherit; font-size:.9rem; padding:11px; resize:none; min-height:64px;}
+
+  .partner-card{background:var(--surface-2); border-radius:4px; padding:14px 16px; margin-top:14px; border-left:2px solid var(--accent);}
+  .partner-card .meta{font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:5px;}
+
+  button.primary{background:var(--accent); color:#fff; border:none; border-radius:4px; font-family:'Inter',sans-serif; font-weight:600; font-size:.82rem; letter-spacing:.03em; padding:11px 18px; cursor:pointer;}
+  button.primary:disabled{opacity:.5; cursor:default;}
+  button.ghost{background:transparent; border:1px solid var(--line); color:var(--ink); border-radius:4px; font-size:.8rem; padding:10px 15px; cursor:pointer;}
+  button.icon-btn{background:var(--surface-2); border:1px solid var(--line); color:var(--ink); border-radius:4px; font-size:1rem; padding:10px 13px; cursor:pointer;}
+  button.icon-btn.recording{background:var(--accent); border-color:var(--accent); animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .err-text{color:var(--accent); font-size:.78rem; margin-top:8px; min-height:1em;}
+
+  .visit-set{font-family:'Fraunces',serif; font-size:1.5rem; font-weight:500; color:var(--ink);}
+  .visit-set .change{display:block; font-family:'Inter',sans-serif; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); text-decoration:underline; cursor:pointer; margin-top:8px;}
+
+  .ping-log{margin-top:14px; font-size:.82rem; color:var(--ink-dim); min-height:1.2em;}
+  .ping-log b{color:var(--accent);}
+
+  .notes-feed{display:flex; flex-direction:column; gap:16px; margin-bottom:18px; max-height:460px; overflow-y:auto; padding-right:2px;}
+  .note{border-radius:6px; overflow:hidden; border:1px solid var(--line); background:var(--surface-2);}
+  .note.mine{border-color:var(--accent-dim);}
+  .note .meta{font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); padding:10px 14px 0;}
+  .note .body{font-size:.9rem; line-height:1.5; padding:8px 14px 14px;}
+  .note.text .body{padding-top:6px;}
+  .note img{width:100%; display:block; max-height:420px; object-fit:cover;}
+  .note audio{width:100%; margin:10px 14px 14px; display:block;}
+  .note-composer{display:flex; gap:8px;}
+  .note-composer input[type=text]{flex:1; background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--ink); padding:11px; font-family:inherit; font-size:.88rem;}
+  .uploading{font-size:.75rem; color:var(--accent); margin-top:8px;}
+
+  .gate{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px; padding:20px; text-align:center;}
+  .gate .eyebrow{font-size:.7rem; letter-spacing:.28em; text-transform:uppercase; color:var(--accent);}
+  .gate h1{font-size:2.4rem; font-weight:300;}
+  .gate input{background:var(--surface); border:1px solid var(--line); color:var(--ink); border-radius:4px; padding:13px 18px; font-size:1.3rem; letter-spacing:.35em; text-align:center; width:190px;}
+  .gate p{color:var(--ink-dim); font-size:.85rem;}
+  .who-pick{display:flex; gap:16px;}
+  .who-pick button{padding:16px 30px; border-radius:4px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-family:'Fraunces',serif; font-size:1.15rem; cursor:pointer;}
+  .who-pick button:hover{border-color:var(--accent); color:var(--accent);}
+  .hidden{display:none !important;}
+  .foot{text-align:center; color:var(--ink-dim); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; margin-top:30px;}
+  ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <div class="eyebrow">Private</div>
+  <h1 style="font-family:'Fraunces',serif;">Ek Aasman</h1>
+  <p>Same sky, different cities.</p>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••">
+  <button class="primary" onclick="tryUnlock()">Enter</button>
+  <p id="gateError" style="color:var(--accent); min-height:1em;"></p>
+</div>
+
+<div id="whoGate" class="gate hidden">
+  <h1 style="font-family:'Fraunces',serif;">Who's this?</h1>
+  <p>This device will remember you.</p>
+  <div class="who-pick">
+    <button onclick="pickProfile('sid')">Sid</button>
+    <button onclick="pickProfile('simran')">Simran</button>
+  </div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <div id="configBanner" class="banner hidden"></div>
+  <header>
+    <div class="eyebrow">Private · Just for two</div>
+    <h1>Ek Aasman</h1>
+  </header>
+  <div class="whoami">Viewing as <b id="whoamiName"></b><button onclick="switchProfile()">switch</button></div>
+
+  <div class="stats">
+    <div class="stat"><b id="togetherNum">0</b><span>Together</span></div>
+    <div class="stat"><b id="streakNum">0</b><span>Streak</span></div>
+    <div class="stat"><b id="apartNum">0</b><span>Apart</span></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="home" onclick="showTab('home')">Home</div>
+    <div class="tab" data-tab="checkin" onclick="showTab('checkin')">Check-in</div>
+    <div class="tab" data-tab="notes" onclick="showTab('notes')">Notes</div>
+  </div>
+
+  <div id="view-home" class="view active">
+    <div class="section-label">Countdown</div>
+    <div class="card">
+      <div id="visitDisplay"></div>
+    </div>
+
+    <div class="section-label">Signal</div>
+    <div class="card">
+      <div class="desc">One tap sends a little glow their way.</div>
+      <button class="primary" id="pingBtn" onclick="sendPing()">Send 💭</button>
+      <div class="ping-log" id="pingLog">No pings yet.</div>
+      <div class="err-text" id="pingErr"></div>
+    </div>
+  </div>
+
+  <div id="view-checkin" class="view">
+    <div class="section-label">Today, for you</div>
+    <div class="card">
+      <div class="desc" id="checkinLabel"></div>
+      <div class="moods" id="moodPicker"></div>
+      <textarea id="checkinNote" placeholder="One line about today..."></textarea>
+      <div class="row" style="margin-top:12px; justify-content:flex-end;">
+        <button class="primary" id="checkinBtn" onclick="submitCheckin()">Save</button>
+      </div>
+      <div class="err-text" id="checkinErr"></div>
+    </div>
+    <div class="section-label">Their day</div>
+    <div class="card">
+      <div id="partnerToday" class="desc">Loading...</div>
+    </div>
+  </div>
+
+  <div id="view-notes" class="view">
+    <div class="section-label">Left for each other</div>
+    <div class="card">
+      <div class="notes-feed" id="notesFeed"></div>
+      <div class="note-composer">
+        <input id="noteInput" type="text" placeholder="Leave a note...">
+        <button class="icon-btn" id="photoBtn" title="Add a photo" onclick="document.getElementById('photoInput').click()">📷</button>
+        <input id="photoInput" type="file" accept="image/*" class="hidden" onchange="handlePhoto(event)">
+        <button class="icon-btn" id="voiceBtn" title="Record a voice note" onclick="toggleVoice()">🎙️</button>
+        <button class="primary" id="noteBtn" onclick="sendNote()">Send</button>
+      </div>
+      <div class="uploading hidden" id="uploadStatus"></div>
+      <div class="err-text" id="noteErr"></div>
+    </div>
+  </div>
+
+  <div class="foot">Ek Aasman · just for the two of you</div>
+</div>
+
+<script>
+// ============ CONFIG — edit all of this, then reload ============
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const APP_PIN = "1234";              // shared PIN to open the app
+const TOGETHER_SINCE = "2026-01-06"; // the date you got together
+const LEFT_DATE = "";                // date Simran left, e.g. "2026-09-15" (leave "" to hide)
+const MEDIA_BUCKET = "ekaasman-media";
+// ==================================================================
+
+let CONFIGURED = !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
+let sb = null;
+let LOAD_ERROR = "";
+if(CONFIGURED){
+  try{
+    if(!window.supabase) throw new Error("Supabase library didn't load (check your internet connection or ad blocker).");
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }catch(e){
+    console.error(e);
+    CONFIGURED = false;
+    LOAD_ERROR = e.message || "Failed to set up Supabase.";
+  }
+}
+
+const MOODS = ["😊","😔","🥱","😍","😤","😴","🥳","😌"];
+let currentProfile = localStorage.getItem('ekaasman_profile') || null;
+let mediaRecorder = null, recordedChunks = [];
+
+function tryUnlock(){
+  const val = document.getElementById('pinInput').value;
+  if(val === APP_PIN){
+    localStorage.setItem('ekaasman_unlocked','1');
+    proceedPastGate();
+  } else {
+    document.getElementById('gateError').textContent = "That's not it — try again.";
+  }
+}
+
+function proceedPastGate(){
+  document.getElementById('gate').classList.add('hidden');
+  if(currentProfile){
+    document.getElementById('app').classList.remove('hidden');
+    init();
+  } else {
+    document.getElementById('whoGate').classList.remove('hidden');
+  }
+}
+
+function pickProfile(p){
+  currentProfile = p;
+  localStorage.setItem('ekaasman_profile', p);
+  document.getElementById('whoGate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  init();
+}
+
+function switchProfile(){
+  currentProfile = null;
+  localStorage.removeItem('ekaasman_profile');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('whoGate').classList.remove('hidden');
+}
+
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
+}
+
+function partnerOf(p){ return p==='sid' ? 'simran' : 'sid'; }
+function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function daysBetween(a,b){ return Math.floor((b-a)/86400000); }
+
+async function safeCall(fn, errEl){
+  if(errEl) errEl.textContent = '';
+  if(!CONFIGURED){
+    if(errEl) errEl.textContent = "Supabase isn't configured yet — see the banner above.";
+    return null;
+  }
+  try{
+    return await fn();
+  }catch(e){
+    console.error(e);
+    if(errEl) errEl.textContent = "Something went wrong — check your Supabase setup.";
+    return null;
+  }
+}
+
+function renderConfigBanner(){
+  const el = document.getElementById('configBanner');
+  if(!CONFIGURED){
+    el.classList.remove('hidden');
+    el.textContent = LOAD_ERROR
+      ? "⚠️ " + LOAD_ERROR
+      : "⚠️ Supabase isn't set up yet. Edit SUPABASE_URL and SUPABASE_ANON_KEY in the CONFIG block near the bottom of this file, then reload.";
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function renderTogetherAndApart(){
+  const now = new Date();
+  document.getElementById('togetherNum').textContent = daysBetween(new Date(TOGETHER_SINCE), now);
+  document.getElementById('apartNum').textContent = LEFT_DATE ? daysBetween(new Date(LEFT_DATE), now) : '–';
+}
+
+function buildMoodPicker(){
+  const el = document.getElementById('moodPicker');
+  el.innerHTML = MOODS.map(m=>`<button class="mood-btn" data-m="${m}">${m}</button>`).join('');
+  el.querySelectorAll('.mood-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      el.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+  });
+  document.getElementById('checkinLabel').textContent = `Logging in as ${cap(currentProfile)}`;
+}
+
+async function submitCheckin(){
+  const btn = document.getElementById('checkinBtn');
+  const errEl = document.getElementById('checkinErr');
+  const mood = document.querySelector('.mood-btn.active');
+  const note = document.getElementById('checkinNote').value.trim();
+  if(!mood && !note){ errEl.textContent = "Pick a mood or write a line first."; return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const today = new Date().toISOString().slice(0,10);
+  await safeCall(()=> sb.from('checkins').upsert({
+    profile: currentProfile, mood: mood ? mood.dataset.m : null, note, day: today
+  }, { onConflict: 'profile,day' }), errEl);
+  btn.disabled = false; btn.textContent = 'Save';
+  await loadPartnerToday();
+  await computeStreak();
+}
+
+async function loadPartnerToday(){
+  const today = new Date().toISOString().slice(0,10);
+  const data = await safeCall(()=> sb.from('checkins').select('*').eq('day', today).then(r=>r.data));
+  const el = document.getElementById('partnerToday');
+  const row = (data||[]).find(r=>r.profile===partnerOf(currentProfile));
+  el.innerHTML = row
+    ? `<div class="partner-card"><div class="meta">${cap(partnerOf(currentProfile))} · Today</div>${row.mood||''} ${escapeHtml(row.note||'')}</div>`
+    : `<div class="desc">Nothing from ${cap(partnerOf(currentProfile))} yet today.</div>`;
+}
+
+async function computeStreak(){
+  const data = await safeCall(()=> sb.from('checkins').select('day').order('day',{ascending:false}).limit(400).then(r=>r.data));
+  if(!data || !data.length){ document.getElementById('streakNum').textContent = '0'; return; }
+  const counts = {};
+  data.forEach(r=> counts[r.day] = (counts[r.day]||0)+1);
+  let streak = 0, d = new Date();
+  while(true){
+    const key = d.toISOString().slice(0,10);
+    if(counts[key] >= 2){ streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  document.getElementById('streakNum').textContent = streak;
+}
+
+async function sendPing(){
+  const btn = document.getElementById('pingBtn');
+  const errEl = document.getElementById('pingErr');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  await safeCall(()=> sb.from('pings').insert({ from_profile: currentProfile }), errEl);
+  btn.disabled = false; btn.textContent = 'Send 💭';
+  await loadPings();
+}
+
+async function loadPings(){
+  const data = await safeCall(()=> sb.from('pings').select('*').order('created_at',{ascending:false}).limit(1).then(r=>r.data));
+  const el = document.getElementById('pingLog');
+  if(!data || !data.length){ el.textContent = 'No pings yet.'; return; }
+  const p = data[0];
+  const mins = Math.round((Date.now()-new Date(p.created_at).getTime())/60000);
+  const when = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.round(mins/60)}h ago`;
+  el.innerHTML = `<b>${cap(p.from_profile)}</b> sent a thought ${when} 💭`;
+}
+
+// ---- Notes: text, photo, voice ----
+function setUploading(msg){
+  const el = document.getElementById('uploadStatus');
+  if(msg){ el.textContent = msg; el.classList.remove('hidden'); }
+  else{ el.classList.add('hidden'); el.textContent=''; }
+}
+
+async function uploadToStorage(blob, ext, folder){
+  const path = `${folder}/${currentProfile}-${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, blob);
+  if(error) throw error;
+  const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function resizeImage(file, maxW=1280){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => resolve(blob), 'image/jpeg', .82);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhoto(event){
+  const file = event.target.files[0];
+  event.target.value = '';
+  if(!file) return;
+  const errEl = document.getElementById('noteErr');
+  if(!CONFIGURED){ errEl.textContent = "Supabase isn't configured yet."; return; }
+  setUploading('Uploading photo...');
+  try{
+    const resized = await resizeImage(file);
+    const url = await uploadToStorage(resized, 'jpg', 'photos');
+    const caption = document.getElementById('noteInput').value.trim();
+    await sb.from('notes').insert({ profile: currentProfile, type: 'photo', content: caption, media_url: url });
+    document.getElementById('noteInput').value = '';
+    await loadNotes();
+  }catch(e){
+    console.error(e);
+    errEl.textContent = "Photo upload failed — check the storage bucket setup.";
+  }
+  setUploading(null);
+}
+
+async function toggleVoice(){
+  const btn = document.getElementById('voiceBtn');
+  if(mediaRecorder && mediaRecorder.state === 'recording'){
+    mediaRecorder.stop();
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      btn.classList.remove('recording');
+      stream.getTracks().forEach(t=>t.stop());
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      setUploading('Uploading voice note...');
+      try{
+        const url = await uploadToStorage(blob, 'webm', 'voice');
+        await sb.from('notes').insert({ profile: currentProfile, type: 'voice', content: '', media_url: url });
+        await loadNotes();
+      }catch(e){
+        console.error(e);
+        document.getElementById('noteErr').textContent = "Voice upload failed — check the storage bucket setup.";
+      }
+      setUploading(null);
+    };
+    mediaRecorder.start();
+    btn.classList.add('recording');
+  }catch(e){
+    console.error(e);
+    document.getElementById('noteErr').textContent = "Couldn't access the microphone.";
+  }
+}
+
+async function sendNote(){
+  const input = document.getElementById('noteInput');
+  const errEl = document.getElementById('noteErr');
+  const btn = document.getElementById('noteBtn');
+  const content = input.value.trim();
+  if(!content) return;
+  btn.disabled = true;
+  await safeCall(()=> sb.from('notes').insert({ profile: currentProfile, type: 'text', content }), errEl);
+  btn.disabled = false;
+  input.value='';
+  await loadNotes();
+}
+
+async function loadNotes(){
+  const data = await safeCall(()=> sb.from('notes').select('*').order('created_at',{ascending:false}).limit(25).then(r=>r.data));
+  const el = document.getElementById('notesFeed');
+  if(!data || !data.length){ el.innerHTML = '<div class="desc">Nothing here yet — leave the first one.</div>'; return; }
+  el.innerHTML = data.map(n=>{
+    const mine = n.profile===currentProfile ? 'mine' : '';
+    const when = new Date(n.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    if(n.type === 'photo'){
+      return `<div class="note ${mine}">
+        <img src="${n.media_url}" loading="lazy">
+        <div class="meta">${cap(n.profile)} · ${when}</div>
+        ${n.content ? `<div class="body">${escapeHtml(n.content)}</div>` : ''}
+      </div>`;
+    }
+    if(n.type === 'voice'){
+      return `<div class="note ${mine}">
+        <div class="meta">${cap(n.profile)} · ${when} · voice note</div>
+        <audio controls src="${n.media_url}"></audio>
+      </div>`;
+    }
+    return `<div class="note text ${mine}">
+      <div class="meta">${cap(n.profile)} · ${when}</div>
+      <div class="body">${escapeHtml(n.content||'')}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderVisitDisplay(value){
+  const el = document.getElementById('visitDisplay');
+  if(value){
+    const target = new Date(value);
+    const days = Math.ceil((target - new Date())/86400000);
+    const text = days > 0 ? `${days} day${days===1?'':'s'} to go` : days === 0 ? "Today's the day" : "That date's passed";
+    el.innerHTML = `<div class="visit-set">${text}<span class="change" onclick="showVisitEditor('${value}')">Change date</span></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="desc">Set the date once — it locks in after saving.</div>
+      <div class="row">
+        <input id="visitDateInput" type="date" style="background:var(--surface-2); border:1px solid var(--line); color:var(--ink); border-radius:4px; padding:10px;">
+        <button class="ghost" id="visitSaveBtn" onclick="saveVisitDate()">Save</button>
+      </div>
+      <div class="err-text" id="visitErr"></div>`;
+  }
+}
+
+function showVisitEditor(current){
+  renderVisitDisplay(null);
+  document.getElementById('visitDateInput').value = current;
+}
+
+async function saveVisitDate(){
+  const val = document.getElementById('visitDateInput').value;
+  const errEl = document.getElementById('visitErr');
+  if(!val){ errEl.textContent = "Pick a date first."; return; }
+  const btn = document.getElementById('visitSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  await safeCall(()=> sb.from('settings').upsert({ key:'next_visit', value: val }), errEl);
+  btn.disabled = false; btn.textContent = 'Save';
+  await loadVisitDate();
+}
+
+async function loadVisitDate(){
+  const data = await safeCall(()=> sb.from('settings').select('*').eq('key','next_visit').maybeSingle().then(r=>r.data));
+  renderVisitDisplay(data ? data.value : null);
+}
+
+async function init(){
+  renderConfigBanner();
+  document.getElementById('whoamiName').textContent = cap(currentProfile);
+  renderTogetherAndApart();
+  buildMoodPicker();
+  await loadPartnerToday();
+  await computeStreak();
+  await loadPings();
+  await loadNotes();
+  await loadVisitDate();
+}
+
+if(localStorage.getItem('ekaasman_unlocked') === '1'){
+  document.getElementById('gate').classList.add('hidden');
+  if(currentProfile){ document.getElementById('app').classList.remove('hidden'); init(); }
+  else { document.getElementById('whoGate').classList.remove('hidden'); }
+}
+</script>
+</body>
+</html>
